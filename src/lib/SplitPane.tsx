@@ -3,21 +3,16 @@ import * as React from 'react';
 import { Pane } from './Pane';
 import { Resizer } from './Resizer';
 
-const DEFAULT_MIN_SIZE = 100;
-
-export interface ChildPane {
-	child: React.ReactNode;
-	key: React.Key;
-
-	defaultSize: number;
-	minSize?: number;
-}
+const DEFAULT_MIN_SIZE = 50;
 
 export interface SplitPaneProps {
 	split: 'horizontal' | 'vertical';
 	className: string;
 
-	childPanes: ReadonlyArray<ChildPane>;
+	children: React.ReactNode;
+
+	defaultSizes?: number[];
+	minSize?: number | number[];
 
 	onDragStarted?: () => void;
 	onDragFinished?: () => void;
@@ -30,7 +25,7 @@ interface ResizeAction {
 }
 
 interface SplitPaneState {
-	sizes: Map<React.Key, number>;
+	sizes: Map<string, number>;
 	resize: ResizeAction | null;
 }
 
@@ -41,18 +36,11 @@ interface Touch {
 
 export class SplitPane extends React.Component<SplitPaneProps, SplitPaneState> {
 	public static readonly defaultProps = {
+		split: 'vertical',
 		className: '',
 	};
 
-	private static getMinSize({ minSize }: ChildPane): number {
-		if (!minSize || minSize <= 0) {
-			return DEFAULT_MIN_SIZE;
-		}
-
-		return minSize;
-	}
-
-	private readonly paneRefs = new Map<React.Key, HTMLDivElement>();
+	private readonly paneRefs = new Map<string, HTMLDivElement>();
 
 	constructor(props: SplitPaneProps) {
 		super(props);
@@ -76,7 +64,7 @@ export class SplitPane extends React.Component<SplitPaneProps, SplitPaneState> {
 	}
 
 	public componentDidUpdate(prevProps: SplitPaneProps) {
-		if (this.props.childPanes !== prevProps.childPanes) {
+		if (this.props.children !== prevProps.children) {
 			this.setState({
 				resize: null,
 			});
@@ -85,7 +73,6 @@ export class SplitPane extends React.Component<SplitPaneProps, SplitPaneState> {
 
 	public render() {
 		const {
-			childPanes,
 			split,
 			className,
 		} = this.props;
@@ -134,16 +121,11 @@ export class SplitPane extends React.Component<SplitPaneProps, SplitPaneState> {
 
 		const entries: React.ReactNode[] = [];
 
-		childPanes.forEach((pane, index) => {
-			const {
-				key,
-				defaultSize,
-				child,
-			} = pane;
+		this.getChildPanes().forEach(([key, pane], index) => {
 			const sizeState = resize ? resize.sizes[index] : sizes.get(key);
 
-			const size = (sizeState !== undefined) ? sizeState : defaultSize;
-			const minSize = SplitPane.getMinSize(pane);
+			const size = (sizeState !== undefined) ? sizeState : this.getDefaultSize(index);
+			const minSize = this.getMinSize(index);
 
 			if (index !== 0) {
 				entries.push((
@@ -166,7 +148,7 @@ export class SplitPane extends React.Component<SplitPaneProps, SplitPaneState> {
 					split={split}
 					className={className}
 				>
-					{ child }
+					{ pane }
 				</Pane>
 			));
 		});
@@ -185,7 +167,50 @@ export class SplitPane extends React.Component<SplitPaneProps, SplitPaneState> {
 		);
 	}
 
-	private paneRef = (key: React.Key) => (ref: HTMLDivElement | null) => {
+	private getDefaultSize(index: number): number {
+		const { defaultSizes } = this.props;
+
+		if (defaultSizes) {
+			const value = defaultSizes[index];
+			if (value >= 0) {
+				return value;
+			}
+		}
+
+		return 1;
+	}
+
+	private getMinSize(index: number): number {
+		const { minSize } = this.props;
+
+		if (typeof minSize === 'number') {
+			if (minSize > 0) {
+				return minSize;
+			}
+		} else if (minSize) {
+			const value = minSize[index];
+			if (value > 0) {
+				return value;
+			}
+		}
+
+		return DEFAULT_MIN_SIZE;
+	}
+
+	private getChildPanes(): Array<[string, React.ReactChild]> {
+		return (React.Children.toArray(this.props.children)
+			.map((element, index): [string, React.ReactChild] => (
+				[
+					typeof element === 'object' && element.key !== undefined
+						? 'key.' + element.key
+						: 'index.' + index,
+					element,
+				]
+			))
+		);
+	}
+
+	private paneRef = (key: string) => (ref: HTMLDivElement | null) => {
 		if (ref) {
 			this.paneRefs.set(key, ref);
 		} else {
@@ -203,27 +228,23 @@ export class SplitPane extends React.Component<SplitPaneProps, SplitPaneState> {
 		}
 	}
 
-	private getSizeUpdate(): Map<React.Key, number> {
+	private getSizeUpdate(): Map<string, number> {
 		const sizeAttr = this.getSizeAttr();
+		const childPanes = this.getChildPanes();
 
-		const ret = new Map<React.Key, number>();
+		return new Map(childPanes.map(([key]): [string, number] => {
+			const node = this.paneRefs.get(key);
 
-		for (const { key } of this.props.childPanes) {
-			const pane = this.paneRefs.get(key);
-			if (!pane) {
-				continue;
-			}
-
-			const size = pane.getBoundingClientRect()[sizeAttr];
-			ret.set(key, size);
-		}
-
-		return ret;
+			const size = node ? node.getBoundingClientRect()[sizeAttr] : 0;
+			return [key, size];
+		}));
 	}
 
 	private collectSizes(sizes: Map<React.Key, number>): number[] {
-		const { childPanes } = this.props;
-		return childPanes.map(({ key }) => sizes.get(key) || 0);
+		const childPanes = this.getChildPanes();
+		return childPanes.map(([key]) => (
+			sizes.get(key) || 0
+		));
 	}
 
 	private onTouchStart = (index: number) => (event: React.TouchEvent) => {
@@ -237,7 +258,7 @@ export class SplitPane extends React.Component<SplitPaneProps, SplitPaneState> {
 	}
 
 	private dragStart(index: number, event: Touch) {
-		const { onDragStarted, split, childPanes } = this.props;
+		const { onDragStarted, split } = this.props;
 		const origin =
 			split === 'vertical'
 				? event.clientX
@@ -259,7 +280,7 @@ export class SplitPane extends React.Component<SplitPaneProps, SplitPaneState> {
 	}
 
 	private move(sizes: number[], index: number, offset: number): number {
-		const { childPanes } = this.props;
+		const childPanes = this.getChildPanes();
 
 		const first = childPanes[index];
 		const second = childPanes[index + 1];
@@ -267,8 +288,8 @@ export class SplitPane extends React.Component<SplitPaneProps, SplitPaneState> {
 			return 0;
 		}
 
-		const firstMinSize = SplitPane.getMinSize(first);
-		const secondMinSize = SplitPane.getMinSize(second);
+		const firstMinSize = this.getMinSize(index);
+		const secondMinSize = this.getMinSize(index + 1);
 
 		const firstSize = sizes[index] + offset;
 		const secondSize = sizes[index + 1] - offset;
@@ -328,14 +349,14 @@ export class SplitPane extends React.Component<SplitPaneProps, SplitPaneState> {
 			return;
 		}
 
-		const { childPanes, onDragFinished } = this.props;
+		const { onDragFinished } = this.props;
 		if (onDragFinished) {
 			onDragFinished();
 		}
 
 		const { sizes } = resize;
-		const sizeMap = new Map(childPanes.map(
-			({ key }, index): [React.Key, number] => (
+		const sizeMap = new Map(this.getChildPanes().map(
+			([key], index): [string, number] => (
 				[key, sizes[index]]
 			),
 		));
