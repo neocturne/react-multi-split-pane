@@ -27,14 +27,19 @@
 		"typescript"
 	],
 	"scripts": {
+		"prebuild": "yarn run clean",
+		"clean": "rimraf dist",
 		"build": "tsc",
-		"lint": "tslint src/**/*"
+		"build:watch": "tsc -w",
+		"lint": "tslint src/**/*",
+		"release": "yarn version --message \"$npm_package_name v%s\""
 	},
 	"dependencies": {
 		"react": "^16.6.3"
 	},
 	"devDependencies": {
 		"@types/react": "^16.7.17",
+		"rimraf": "^2.6.2",
 		"tslint": "^5.11.0",
 		"typescript": "^3.2.2"
 	}
