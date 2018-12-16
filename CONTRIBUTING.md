@@ -78,11 +78,11 @@ Follow this process if you'd like your work considered for inclusion in the proj
 
    ```bash
    # Clone your fork of the repo into the current directory
-   git clone https://github.com/<your-username>/react-split-pane
+   git clone https://github.com/<your-username>/react-multi-split-pane
    # Navigate to the newly cloned directory
    cd react-split-pane
    # Assign the original repo to a remote called "upstream"
-   git remote add upstream https://github.com/tomkp/react-split-pane
+   git remote add upstream https://github.com/neoraider/react-multi-split-pane
    ```
 
 2. If you cloned a while ago, get the latest changes from upstream:
@@ -127,29 +127,3 @@ Follow this process if you'd like your work considered for inclusion in the proj
    with a clear title and description.
 
 **IMPORTANT**: By submitting a patch, you agree to allow the project owner to license your work under the same license as that used by this project (MIT).
-
-<a name="running-local-demo"></a>
-
-## Running Local Demo
-
-You can run the local demo with yarn like so:
-
-```bash
-cd <root>
-yarn build
-yarn website:start
-```
-
-The local app will then be available at http://localhost:3000
-
-<a name="running-tests"></a>
-
-## Running Tests
-
-All unit tests must pass before a pull request will be approved.
-You can run unit tests with yarn like so:
-
-```bash
-cd <root>
-yarn test
-```

@@ -19,7 +19,7 @@ Steps to reproduce the behavior:
 
 or
 
-Post a link to a [CodeSandbox](https://codesandbox.io/). You can start by forking [this one](https://codesandbox.io/s/mz305w3yoy).
+Post a link to a [CodeSandbox](https://codesandbox.io/).
 
 #### Expected behavior
 
