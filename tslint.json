@@ -1,0 +1,12 @@
+{
+	"defaultSeverity": "warning",
+	"extends": [
+		"tslint:recommended"
+	],
+	"rules": {
+		"indent": [true, "tabs"],
+		"interface-name": false,
+		"object-literal-sort-keys": false,
+		"quotemark": [true, "single", "avoid-escape", "avoid-template"]
+	}
+}
