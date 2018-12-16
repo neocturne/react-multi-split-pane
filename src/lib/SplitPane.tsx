@@ -129,11 +129,13 @@ export class SplitPane extends React.Component<SplitPaneProps, SplitPaneState> {
 			const minSize = this.getMinSize(index);
 
 			if (index !== 0) {
+				const resizing = resize && resize.index === (index - 1);
+
 				entries.push((
 					<Resizer
 						key={'resizer.' + index}
 						split={split}
-						className={className}
+						className={className + (resizing ? ' resizing' : '')}
 						onMouseDown={this.onMouseDown(index - 1)}
 						onTouchStart={this.onTouchStart(index - 1)}
 					/>

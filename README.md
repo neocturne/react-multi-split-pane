@@ -123,7 +123,7 @@ possible.
     cursor: row-resize;
 }
 
-.Resizer.horizontal:hover {
+.Resizer.horizontal:hover, .Resizer.horizontal.resizing {
     border-top: 5px solid rgba(0, 0, 0, 0.5);
     border-bottom: 5px solid rgba(0, 0, 0, 0.5);
 }
@@ -136,8 +136,25 @@ possible.
     cursor: col-resize;
 }
 
-.Resizer.vertical:hover {
+.Resizer.vertical:hover, .Resizer.vertical.resizing {
     border-left: 5px solid rgba(0, 0, 0, 0.5);
     border-right: 5px solid rgba(0, 0, 0, 0.5);
+}
+
+.DragLayer {
+	z-index: 1;
+	pointer-events: none;
+}
+
+.DragLayer.resizing {
+	pointer-events: auto;
+}
+
+.DragLayer.horizontal {
+	cursor: row-resize;
+}
+
+.DragLayer.vertical {
+	cursor: col-resize;
 }
 ```
