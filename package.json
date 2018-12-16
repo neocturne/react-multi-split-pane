@@ -1,45 +1,41 @@
 {
-  "name": "react-multi-split-pane",
-  "description": "React multi split-pane component",
-  "main": "dist/index.js",
-  "source": "src/index.ts",
-  "files": [
-    "dist"
-  ],
-  "version": "0.0.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/neoraider/react-multi-split-pane"
-  },
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/neoraider/react-multi-split-pane"
-  },
-  "homepage": "https://github.com/neoraider/react-multi-split-pane",
-  "author": "Matthias Schiffer <mschiffer@universe-factory.net>",
-  "keywords": [
-    "react",
-    "react-component",
-    "split-pane",
-    "multi-split-pane",
-    "react-split-pane",
-    "react-multi-split-pane",
-    "typescript"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "test": "mochify -R spec --transform babelify",
-    "test:watch": "mochify -R spec --watch --transform babelify",
-    "test:coverage": "mochify --plugin [ mochify-istanbul --exclude '**/test/**' --report lcovonly ] --transform babelify && cat lcov.info | coveralls && rm lcov.info",
-    "lint": "tslint src/** test/**"
-  },
-  "dependencies": {
-    "react": "^16.6.3"
-  },
-  "devDependencies": {
-    "@types/react": "^16.7.17",
-    "prettier": "^1.15.3",
-    "tslint": "^5.11.0",
-    "typescript": "^3.2.2"
-  }
+	"name": "react-multi-split-pane",
+	"description": "React multi split-pane component",
+	"main": "dist/index.js",
+	"source": "src/index.ts",
+	"files": [
+		"dist"
+	],
+	"version": "0.0.0",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/neoraider/react-multi-split-pane"
+	},
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/neoraider/react-multi-split-pane"
+	},
+	"homepage": "https://github.com/neoraider/react-multi-split-pane",
+	"author": "Matthias Schiffer <mschiffer@universe-factory.net>",
+	"keywords": [
+		"react",
+		"react-component",
+		"split-pane",
+		"multi-split-pane",
+		"react-split-pane",
+		"react-multi-split-pane",
+		"typescript"
+	],
+	"scripts": {
+		"build": "tsc",
+		"lint": "tslint src/**/*"
+	},
+	"dependencies": {
+		"react": "^16.6.3"
+	},
+	"devDependencies": {
+		"@types/react": "^16.7.17",
+		"tslint": "^5.11.0",
+		"typescript": "^3.2.2"
+	}
 }
