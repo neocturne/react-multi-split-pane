@@ -2,6 +2,7 @@ import * as React from 'react';
 
 import { Pane } from './Pane';
 import { Resizer } from './Resizer';
+import { ClientPosition } from './util';
 
 const DEFAULT_MIN_SIZE = 50;
 
@@ -30,12 +31,7 @@ interface SplitPaneState {
 	resize: ResizeAction | null;
 }
 
-interface Touch {
-	clientX: number;
-	clientY: number;
-}
-
-export class SplitPane extends React.Component<SplitPaneProps, SplitPaneState> {
+export class SplitPane extends React.PureComponent<SplitPaneProps, SplitPaneState> {
 	public static readonly defaultProps = {
 		split: 'vertical',
 		className: '',
@@ -136,8 +132,8 @@ export class SplitPane extends React.Component<SplitPaneProps, SplitPaneState> {
 						key={'resizer.' + index}
 						split={split}
 						className={className + (resizing ? ' resizing' : '')}
-						onMouseDown={this.onMouseDown(index - 1)}
-						onTouchStart={this.onTouchStart(index - 1)}
+						index={index - 1}
+						onDragStarted={this.handleDragStart}
 					/>
 				));
 			}
@@ -250,22 +246,12 @@ export class SplitPane extends React.Component<SplitPaneProps, SplitPaneState> {
 		));
 	}
 
-	private onTouchStart = (index: number) => (event: React.TouchEvent) => {
-		event.preventDefault();
-		this.dragStart(index, event.touches[0]);
-	}
-
-	private onMouseDown = (index: number) => (event: React.MouseEvent) => {
-		event.preventDefault();
-		this.dragStart(index, event);
-	}
-
-	private dragStart(index: number, event: Touch) {
+	private handleDragStart = (index: number, pos: ClientPosition) => {
 		const { onDragStarted, split } = this.props;
 		const origin =
 			split === 'vertical'
-				? event.clientX
-				: event.clientY;
+				? pos.clientX
+				: pos.clientY;
 		const sizes = this.getSizeUpdate();
 
 		if (onDragStarted) {
@@ -320,7 +306,7 @@ export class SplitPane extends React.Component<SplitPaneProps, SplitPaneState> {
 		this.onMouseMove(event.touches[0]);
 	}
 
-	private onMouseMove = (event: Touch) => {
+	private onMouseMove = (event: ClientPosition) => {
 		const { resize, sizes } = this.state;
 		if (!resize) {
 			return;

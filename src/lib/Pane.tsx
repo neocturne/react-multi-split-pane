@@ -19,7 +19,7 @@ const baseStyle: React.CSSProperties = {
 	flexBasis: 'auto',
 };
 
-export class Pane extends React.PureComponent<PaneProps> {
+export class Pane extends React.Component<PaneProps> {
 	public render() {
 		const {
 			size,
