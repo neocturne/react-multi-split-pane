@@ -8,6 +8,8 @@ export interface PaneProps {
 	className: string;
 
 	forwardRef: React.Ref<HTMLDivElement>;
+
+	children: React.ReactNode;
 }
 
 const baseStyle: React.CSSProperties = {
@@ -19,39 +21,35 @@ const baseStyle: React.CSSProperties = {
 	flexBasis: 'auto',
 };
 
-export class Pane extends React.Component<PaneProps> {
-	public render() {
-		const {
-			size,
-			minSize,
-			children,
-			split,
-			className,
-			forwardRef,
-		} = this.props;
+export const Pane = React.memo(({
+	size,
+	minSize,
+	split,
+	className,
+	forwardRef,
+	children,
+}: PaneProps) => {
+	const style: React.CSSProperties = {
+		...baseStyle,
+		flexGrow: size,
+		flexShrink: size,
+	};
 
-		const style: React.CSSProperties = {
-			...baseStyle,
-			flexGrow: size,
-			flexShrink: size,
-		};
-
-		if (split === 'vertical') {
-			style.width = 0;
-			style.height = '100%';
-			style.minWidth = minSize;
-		} else {
-			style.width = '100%';
-			style.height = 0;
-			style.minHeight = minSize;
-		}
-
-		const classes = ['Pane', split, className].join(' ');
-
-		return (
-			<div className={classes} style={style} ref={forwardRef}>
-				{children}
-			</div>
-		);
+	if (split === 'vertical') {
+		style.width = 0;
+		style.height = '100%';
+		style.minWidth = minSize;
+	} else {
+		style.width = '100%';
+		style.height = 0;
+		style.minHeight = minSize;
 	}
-}
+
+	const classes = ['Pane', split, className].join(' ');
+
+	return (
+		<div className={classes} style={style} ref={forwardRef}>
+			{children}
+		</div>
+	);
+});

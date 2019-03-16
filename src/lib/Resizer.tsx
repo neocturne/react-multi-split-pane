@@ -1,4 +1,5 @@
 import * as React from 'react';
+const { useCallback } = React;
 
 import { ClientPosition } from './util';
 
@@ -10,37 +11,33 @@ export interface ResizerProps {
 	onDragStarted: (index: number, pos: ClientPosition) => void;
 }
 
-export class Resizer extends React.PureComponent<ResizerProps> {
-	public render() {
-		const {
-			split,
-			className,
-		} = this.props;
-
-		const classes = ['Resizer', split, className].join(' ');
-
-		return (
-			<span
-				role='presentation'
-				className={classes}
-				style={{flex: 'none'}}
-				onMouseDown={this.handleMouseDown}
-				onTouchStart={this.handleTouchStart}
-			/>
-		);
-	}
-
-	private handleMouseDown = (event: React.MouseEvent) => {
+export const Resizer = React.memo(({
+	split,
+	className,
+	index,
+	onDragStarted,
+}: ResizerProps) => {
+	const handleMouseDown = useCallback((event: React.MouseEvent) => {
 		event.preventDefault();
 
-		const { index, onDragStarted } = this.props;
 		onDragStarted(index, event);
-	}
+	}, [index, onDragStarted]);
 
-	private handleTouchStart = (event: React.TouchEvent) => {
+	const handleTouchStart = useCallback((event: React.TouchEvent) => {
 		event.preventDefault();
 
-		const { index, onDragStarted } = this.props;
 		onDragStarted(index, event.touches[0]);
-	}
-}
+	}, [index, onDragStarted]);
+
+	const classes = ['Resizer', split, className].join(' ');
+
+	return (
+		<span
+			role='presentation'
+			className={classes}
+			style={{flex: 'none'}}
+			onMouseDown={handleMouseDown}
+			onTouchStart={handleTouchStart}
+		/>
+	);
+});
