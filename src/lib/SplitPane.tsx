@@ -196,16 +196,23 @@ export class SplitPane extends React.PureComponent<SplitPaneProps, SplitPaneStat
 		return DEFAULT_MIN_SIZE;
 	}
 
-	private getChildPanes(): Array<[string, React.ReactChild]> {
+	private getNodeKey(node: any, index: number): string {
+		if (
+			typeof node === 'object' &&
+			node !== null &&
+			node.key !== undefined
+		) {
+			return 'key.' + node.key;
+		}
+
+		return 'index.' + index;
+	}
+
+	private getChildPanes(): Array<[string, React.ReactNode]> {
 		return (React.Children.toArray(this.props.children)
-			.map((element, index): [string, React.ReactChild] => (
-				[
-					typeof element === 'object' && element.key !== undefined
-						? 'key.' + element.key
-						: 'index.' + index,
-					element,
-				]
-			))
+			.map((node, index): [string, React.ReactNode] =>
+				[this.getNodeKey(node, index), node],
+			)
 		);
 	}
 
