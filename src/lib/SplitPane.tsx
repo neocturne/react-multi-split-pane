@@ -10,7 +10,7 @@ export interface SplitPaneProps {
 	split: 'horizontal' | 'vertical';
 	className: string;
 
-	children: React.ReactNode;
+	children: React.ReactChild[];
 
 	defaultSizes?: number[];
 	minSize?: number | number[];
@@ -199,8 +199,8 @@ export class SplitPane extends React.PureComponent<SplitPaneProps, SplitPaneStat
 	private getNodeKey(node: any, index: number): string {
 		if (
 			typeof node === 'object' &&
-			node !== null &&
-			node.key !== undefined
+			node != null &&
+			node.key != null
 		) {
 			return 'key.' + node.key;
 		}
@@ -209,7 +209,7 @@ export class SplitPane extends React.PureComponent<SplitPaneProps, SplitPaneStat
 	}
 
 	private getChildPanes(): Array<[string, React.ReactNode]> {
-		return (React.Children.toArray(this.props.children)
+		return (this.props.children
 			.map((node, index): [string, React.ReactNode] =>
 				[this.getNodeKey(node, index), node],
 			)
