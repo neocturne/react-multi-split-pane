@@ -37,7 +37,7 @@ export class SplitPane extends React.PureComponent<SplitPaneProps, SplitPaneStat
 		className: '',
 	};
 
-	private readonly paneRefs = new Map<string, HTMLDivElement>();
+	private paneRefs = new Map<string, React.RefObject<HTMLDivElement>>();
 
 	constructor(props: SplitPaneProps) {
 		super(props);
@@ -77,6 +77,9 @@ export class SplitPane extends React.PureComponent<SplitPaneProps, SplitPaneStat
 			resize,
 			sizes,
 		} = this.state;
+
+		const prevPaneRefs = this.paneRefs;
+		this.paneRefs = new Map<string, React.RefObject<HTMLDivElement>>();
 
 		let splitStyleProps: React.CSSProperties;
 
@@ -138,10 +141,13 @@ export class SplitPane extends React.PureComponent<SplitPaneProps, SplitPaneStat
 				));
 			}
 
+			const ref = prevPaneRefs.get(key) || React.createRef();
+			this.paneRefs.set(key, ref);
+
 			entries.push((
 				<Pane
 					key={'pane.' + key}
-					forwardRef={this.paneRef(key)}
+					forwardRef={ref}
 					size={size}
 					minSize={minSize}
 					split={split}
@@ -216,14 +222,6 @@ export class SplitPane extends React.PureComponent<SplitPaneProps, SplitPaneStat
 		);
 	}
 
-	private paneRef = (key: string) => (ref: HTMLDivElement | null) => {
-		if (ref) {
-			this.paneRefs.set(key, ref);
-		} else {
-			this.paneRefs.delete(key);
-		}
-	}
-
 	private getSizeAttr(): 'width' | 'height' {
 		switch (this.props.split) {
 		case 'horizontal':
@@ -239,9 +237,9 @@ export class SplitPane extends React.PureComponent<SplitPaneProps, SplitPaneStat
 		const childPanes = this.getChildPanes();
 
 		return new Map(childPanes.map(([key]): [string, number] => {
-			const node = this.paneRefs.get(key);
+			const ref = this.paneRefs.get(key);
 
-			const size = node ? node.getBoundingClientRect()[sizeAttr] : 0;
+			const size = (ref && ref.current) ? ref.current.getBoundingClientRect()[sizeAttr] : 0;
 			return [key, size];
 		}));
 	}
