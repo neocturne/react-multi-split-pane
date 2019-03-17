@@ -31,7 +31,7 @@
 		"clean": "rimraf dist",
 		"build": "tsc",
 		"build:watch": "tsc -w",
-		"lint": "tslint src/**/*",
+		"lint": "eslint src/**/*",
 		"release": "yarn version --message \"$npm_package_name v%s\""
 	},
 	"dependencies": {
@@ -39,8 +39,15 @@
 	},
 	"devDependencies": {
 		"@types/react": "^16.8.8",
+		"@typescript-eslint/eslint-plugin": "^1.4.2",
+		"@typescript-eslint/parser": "^1.4.2",
+		"eslint": "^5.15.3",
+		"eslint-config-prettier": "^4.1.0",
+		"eslint-plugin-prettier": "^3.0.1",
+		"eslint-plugin-react": "^7.12.4",
+		"eslint-plugin-react-hooks": "^1.5.1",
+		"prettier": "^1.16.4",
 		"rimraf": "^2.6.3",
-		"tslint": "^5.14.0",
 		"typescript": "^3.3.3333"
 	}
 }

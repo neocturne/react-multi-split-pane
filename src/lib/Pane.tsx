@@ -21,14 +21,7 @@ const baseStyle: React.CSSProperties = {
 	flexBasis: 'auto',
 };
 
-export const Pane = React.memo(({
-	size,
-	minSize,
-	split,
-	className,
-	forwardRef,
-	children,
-}: PaneProps) => {
+export const Pane = React.memo(({ size, minSize, split, className, forwardRef, children }: PaneProps) => {
 	const style: React.CSSProperties = {
 		...baseStyle,
 		flexGrow: size,
