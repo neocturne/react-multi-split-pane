@@ -85,7 +85,7 @@ could do something like the following:
 ```jsx
 <SplitPane
     split="vertical" minSize={50}
-    defaultSize={JSON.parse(localStorage.getItem('splitPos')) || undefined}
+    defaultSizes={JSON.parse(localStorage.getItem('splitPos')) || undefined}
     onDragFinished={(size) => localStorage.setItem('splitPos', JSON.stringify(size))}
 >
     <div></div>
