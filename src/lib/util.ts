@@ -60,10 +60,7 @@ function useDragStateHandlers<T>(
 
 		const onMouseUp = (): void => {
 			setDragging(null);
-
-			if (onDragFinished) {
-				onDragFinished(dragState);
-			}
+			onDragFinished(dragState);
 		};
 
 		return [dragState, onMouseUp];
