@@ -59,11 +59,11 @@ function useDragStateHandlers<T>(
 		const dragState: DragState<T> = { offset: current - origin, extraState };
 
 		const onMouseUp = (): void => {
+			setDragging(null);
+
 			if (onDragFinished) {
 				onDragFinished(dragState);
 			}
-
-			setDragging(null);
 		};
 
 		return [dragState, onMouseUp];

@@ -1,5 +1,5 @@
 import * as React from 'react';
-const { useCallback, useRef, useState, useMemo } = React;
+const { useCallback, useRef, useState, useMemo, useEffect } = React;
 
 import { Pane } from './Pane';
 import { Resizer } from './Resizer';
@@ -17,6 +17,7 @@ export interface SplitPaneProps {
 	minSize?: number | number[];
 
 	onDragStarted?: () => void;
+	onChange?: (sizes: number[]) => void;
 	onDragFinished?: (sizes: number[]) => void;
 }
 
@@ -111,7 +112,7 @@ function useSplitPaneResize(
 	resizeState: ResizeState | null;
 	handleDragStart: (index: number, pos: ClientPosition) => void;
 } {
-	const { children, split, defaultSizes, minSize: minSizes, onDragStarted, onDragFinished } = options;
+	const { children, split, defaultSizes, minSize: minSizes, onDragStarted, onChange, onDragFinished } = options;
 
 	const [sizes, setSizes] = useState(new Map<string, number>());
 	const paneRefs = useRef(new Map<string, React.RefObject<HTMLDivElement>>());
@@ -159,6 +160,12 @@ function useSplitPaneResize(
 	const [dragState, beginDrag] = useDragState<ResizeState>(split, handleDragFinished);
 	const movedSizes = useMemo(() => getMovedSizes(dragState), [dragState, getMovedSizes]);
 	const resizeState = dragState ? dragState.extraState : null;
+
+	useEffect(() => {
+		if (onChange && dragState) {
+			onChange(movedSizes);
+		}
+	}, [dragState, movedSizes, onChange]);
 
 	const childPanes = useMemo(() => {
 		const prevPaneRefs = paneRefs.current;

@@ -33,11 +33,6 @@ yarn add react-multi-split-pane
 </SplitPane>
 ```
 
-## Notes for updating from react-multi-split-pane v0.1.x
-
-All code has been cleaned up significantly by moving to React Hooks. Due to
-the restructuring, the `onChange` callback is not supported anymore.
-
 ## Differences from [react-split-pane](https://github.com/tomkp/react-split-pane)
 
 Much of the code has been rewritten, so the feature set is a bit different. All
@@ -73,6 +68,10 @@ This callback is invoked when a drag starts.
 
 ### onDragFinished: (sizes: number[]) => void
 This callback is invoked when a drag ends.
+
+### onChange: (sizes: number[]) => void
+This callback is invoked with the current drag during a drag event. It is
+recommended that it is wrapped in a debounce function.
 
 ## Persisting Positions
 
