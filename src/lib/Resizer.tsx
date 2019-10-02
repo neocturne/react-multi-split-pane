@@ -42,3 +42,4 @@ export const Resizer = React.memo(({ split, className, index, onDragStarted }: R
 		/>
 	);
 });
+Resizer.displayName = 'Resizer';

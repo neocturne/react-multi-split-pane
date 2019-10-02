@@ -1,14 +1,15 @@
 import * as React from 'react';
+const { useCallback, useRef, useState, useMemo } = React;
 
 import { Pane } from './Pane';
 import { Resizer } from './Resizer';
-import { ClientPosition } from './util';
+import { ClientPosition, useDragState, DragState } from './util';
 
 const DEFAULT_MIN_SIZE = 50;
 
 export interface SplitPaneProps {
-	split: 'horizontal' | 'vertical';
-	className: string;
+	split?: 'horizontal' | 'vertical';
+	className?: string;
 
 	children: React.ReactChild[];
 
@@ -16,326 +17,275 @@ export interface SplitPaneProps {
 	minSize?: number | number[];
 
 	onDragStarted?: () => void;
-	onChange?: (sizes: number[]) => void;
 	onDragFinished?: (sizes: number[]) => void;
 }
 
-interface ResizeAction {
-	sizes: number[];
-	origin: number;
+export interface SplitPaneResizeOptions extends SplitPaneProps {
+	split: 'horizontal' | 'vertical';
+	className: string;
+}
+
+interface ResizeState {
 	index: number;
 }
 
-interface SplitPaneState {
-	sizes: Map<string, number>;
-	resize: ResizeAction | null;
+function getNodeKey(node: React.ReactChild, index: number): string {
+	if (typeof node === 'object' && node && node.key != null) {
+		return 'key.' + node.key;
+	}
+
+	return 'index.' + index;
 }
 
-export class SplitPane extends React.PureComponent<SplitPaneProps, SplitPaneState> {
-	public static readonly defaultProps = {
-		split: 'vertical',
-		className: '',
-	};
-
-	private paneRefs = new Map<string, React.RefObject<HTMLDivElement>>();
-
-	public constructor(props: SplitPaneProps) {
-		super(props);
-
-		this.state = {
-			sizes: new Map(),
-			resize: null,
-		};
-	}
-
-	public componentDidMount(): void {
-		document.addEventListener('mouseup', this.onMouseUp);
-		document.addEventListener('mousemove', this.onMouseMove);
-		document.addEventListener('touchmove', this.onTouchMove);
-	}
-
-	public componentWillUnmount(): void {
-		document.removeEventListener('mouseup', this.onMouseUp);
-		document.removeEventListener('mousemove', this.onMouseMove);
-		document.removeEventListener('touchmove', this.onTouchMove);
-	}
-
-	public componentDidUpdate(prevProps: SplitPaneProps): void {
-		if (this.props.children !== prevProps.children) {
-			this.setState({
-				resize: null,
-			});
+function getMinSize(index: number, minSizes?: number | number[]): number {
+	if (typeof minSizes === 'number') {
+		if (minSizes > 0) {
+			return minSizes;
+		}
+	} else if (minSizes instanceof Array) {
+		const value = minSizes[index];
+		if (value > 0) {
+			return value;
 		}
 	}
 
-	public render(): React.ReactNode {
-		const { split, className } = this.props;
-		const { resize, sizes } = this.state;
+	return DEFAULT_MIN_SIZE;
+}
 
-		const prevPaneRefs = this.paneRefs;
-		this.paneRefs = new Map<string, React.RefObject<HTMLDivElement>>();
-
-		let splitStyleProps: React.CSSProperties;
-
-		if (split === 'vertical') {
-			splitStyleProps = {
-				left: 0,
-				right: 0,
-				flexDirection: 'row',
-			};
-		} else {
-			splitStyleProps = {
-				bottom: 0,
-				top: 0,
-				flexDirection: 'column',
-				minHeight: '100%',
-				width: '100%',
-			};
+function getDefaultSize(index: number, defaultSizes?: number[]): number {
+	if (defaultSizes) {
+		const value = defaultSizes[index];
+		if (value >= 0) {
+			return value;
 		}
+	}
 
-		const style: React.CSSProperties = {
-			display: 'flex',
-			flex: 1,
-			height: '100%',
-			position: 'absolute',
-			outline: 'none',
-			overflow: 'hidden',
-			...splitStyleProps,
-		};
-		const classes = ['SplitPane', split, className].join(' ');
+	return 1;
+}
 
-		const dragLayerStyle: React.CSSProperties = {
-			position: 'absolute',
-			top: 0,
-			right: 0,
-			bottom: 0,
-			left: 0,
-		};
-		const dragLayerClasses = ['DragLayer', split, resize ? 'resizing' : '', className].join(' ');
+function move(sizes: number[], index: number, offset: number, minSizes: number | number[] | undefined): number {
+	if (!offset || index < 0 || index + 1 >= sizes.length) {
+		return 0;
+	}
 
-		const entries: React.ReactNode[] = [];
+	const firstMinSize = getMinSize(index, minSizes);
+	const secondMinSize = getMinSize(index + 1, minSizes);
 
-		this.getChildPanes().forEach(([key, pane], index) => {
-			const sizeState = resize ? resize.sizes[index] : sizes.get(key);
+	const firstSize = sizes[index] + offset;
+	const secondSize = sizes[index + 1] - offset;
 
-			const size = sizeState !== undefined ? sizeState : this.getDefaultSize(index);
-			const minSize = this.getMinSize(index);
+	if (offset < 0 && firstSize < firstMinSize) {
+		// offset is negative, so missing and pushed are, too
+		const missing = firstSize - firstMinSize;
+		const pushed = move(sizes, index - 1, missing, minSizes);
 
-			if (index !== 0) {
-				const resizing = resize && resize.index === index - 1;
+		offset -= missing - pushed;
+	} else if (offset > 0 && secondSize < secondMinSize) {
+		const missing = secondMinSize - secondSize;
+		const pushed = move(sizes, index + 1, missing, minSizes);
 
-				entries.push(
-					<Resizer
-						key={'resizer.' + index}
-						split={split}
-						className={className + (resizing ? ' resizing' : '')}
-						index={index - 1}
-						onDragStarted={this.handleDragStart}
-					/>,
-				);
+		offset -= missing - pushed;
+	}
+
+	sizes[index] += offset;
+	sizes[index + 1] -= offset;
+
+	return offset;
+}
+
+const defaultProps = {
+	split: 'vertical' as const,
+	className: '',
+};
+
+function useSplitPaneResize(
+	options: SplitPaneResizeOptions,
+): {
+	childPanes: {
+		key: string;
+		node: React.ReactNode;
+		ref: React.RefObject<HTMLDivElement>;
+		size: number;
+		minSize: number;
+	}[];
+	resizeState: ResizeState | null;
+	handleDragStart: (index: number, pos: ClientPosition) => void;
+} {
+	const { children, split, defaultSizes, minSize: minSizes, onDragStarted, onDragFinished } = options;
+
+	const [sizes, setSizes] = useState(new Map<string, number>());
+	const paneRefs = useRef(new Map<string, React.RefObject<HTMLDivElement>>());
+
+	const getMovedSizes = useCallback(
+		(dragState: DragState<ResizeState> | null): number[] => {
+			const collectedSizes = children.map(
+				(node, index) =>
+					sizes.get(getNodeKey(node, index)) || getDefaultSize(index, defaultSizes),
+			);
+
+			if (dragState) {
+				const {
+					offset,
+					extraState: { index },
+				} = dragState;
+				move(collectedSizes, index, offset, minSizes);
 			}
+
+			return collectedSizes;
+		},
+		[children, defaultSizes, minSizes, sizes],
+	);
+
+	const handleDragFinished = useCallback(
+		(dragState: DragState<ResizeState>) => {
+			const movedSizes = getMovedSizes(dragState);
+
+			setSizes(
+				new Map(
+					children.map((node, index): [string, number] => [
+						getNodeKey(node, index),
+						movedSizes[index],
+					]),
+				),
+			);
+
+			if (onDragFinished) {
+				onDragFinished(movedSizes);
+			}
+		},
+		[children, getMovedSizes, onDragFinished],
+	);
+
+	const [dragState, beginDrag] = useDragState<ResizeState>(split, handleDragFinished);
+	const movedSizes = useMemo(() => getMovedSizes(dragState), [dragState, getMovedSizes]);
+	const resizeState = dragState ? dragState.extraState : null;
+
+	const childPanes = useMemo(() => {
+		const prevPaneRefs = paneRefs.current;
+		paneRefs.current = new Map<string, React.RefObject<HTMLDivElement>>();
+
+		return children.map((node, index) => {
+			const key = getNodeKey(node, index);
 
 			const ref = prevPaneRefs.get(key) || React.createRef();
-			this.paneRefs.set(key, ref);
+			paneRefs.current.set(key, ref);
+
+			const minSize = getMinSize(index, minSizes);
+
+			return { key, node, ref, minSize };
+		});
+	}, [children, minSizes]);
+
+	const childPanesWithSizes = useMemo(
+		() =>
+			childPanes.map((child, index) => {
+				const size = movedSizes[index];
+				return { ...child, size };
+			}),
+		[childPanes, movedSizes],
+	);
+
+	const handleDragStart = useCallback(
+		(index: number, pos: ClientPosition): void => {
+			const sizeAttr = split === 'vertical' ? 'width' : 'height';
+
+			const clientSizes = new Map(
+				childPanes.map(({ key, ref }): [string, number] => {
+					const size = ref.current ? ref.current.getBoundingClientRect()[sizeAttr] : 0;
+					return [key, size];
+				}),
+			);
+
+			if (onDragStarted) {
+				onDragStarted();
+			}
+
+			beginDrag(pos, { index });
+			setSizes(clientSizes);
+		},
+		[beginDrag, childPanes, onDragStarted, split],
+	);
+
+	return { childPanes: childPanesWithSizes, resizeState, handleDragStart };
+}
+
+export const SplitPane = React.memo((props: SplitPaneProps) => {
+	const options = { ...defaultProps, ...props };
+	const { split, className } = options;
+
+	const { childPanes, resizeState, handleDragStart } = useSplitPaneResize(options);
+
+	const splitStyleProps: React.CSSProperties =
+		split === 'vertical'
+			? {
+					left: 0,
+					right: 0,
+					flexDirection: 'row',
+			  }
+			: {
+					bottom: 0,
+					top: 0,
+					flexDirection: 'column',
+					minHeight: '100%',
+					width: '100%',
+			  };
+
+	const style: React.CSSProperties = {
+		display: 'flex',
+		flex: 1,
+		height: '100%',
+		position: 'absolute',
+		outline: 'none',
+		overflow: 'hidden',
+		...splitStyleProps,
+	};
+	const classes = ['SplitPane', split, className].join(' ');
+
+	const dragLayerStyle: React.CSSProperties = {
+		position: 'absolute',
+		top: 0,
+		right: 0,
+		bottom: 0,
+		left: 0,
+	};
+	const dragLayerClasses = ['DragLayer', split, resizeState ? 'resizing' : '', className].join(' ');
+
+	const entries: React.ReactNode[] = [];
+
+	childPanes.forEach(({ key, node, ref, size, minSize }, index) => {
+		if (index !== 0) {
+			const resizing = resizeState && resizeState.index === index - 1;
 
 			entries.push(
-				<Pane
-					key={'pane.' + key}
-					forwardRef={ref}
-					size={size}
-					minSize={minSize}
+				<Resizer
+					key={'resizer.' + index}
 					split={split}
-					className={className}
-				>
-					{pane}
-				</Pane>,
+					className={className + (resizing ? ' resizing' : '')}
+					index={index - 1}
+					onDragStarted={handleDragStart}
+				/>,
 			);
-		});
+		}
 
-		return (
-			<div className={classes} style={style}>
-				<div className={dragLayerClasses} style={dragLayerStyle} />
-				{entries}
-			</div>
+		entries.push(
+			<Pane
+				key={'pane.' + key}
+				forwardRef={ref}
+				size={size}
+				minSize={minSize}
+				split={split}
+				className={className}
+			>
+				{node}
+			</Pane>,
 		);
-	}
+	});
 
-	private getDefaultSize(index: number): number {
-		const { defaultSizes } = this.props;
-
-		if (defaultSizes) {
-			const value = defaultSizes[index];
-			if (value >= 0) {
-				return value;
-			}
-		}
-
-		return 1;
-	}
-
-	private getMinSize(index: number): number {
-		const { minSize } = this.props;
-
-		if (typeof minSize === 'number') {
-			if (minSize > 0) {
-				return minSize;
-			}
-		} else if (minSize) {
-			const value = minSize[index];
-			if (value > 0) {
-				return value;
-			}
-		}
-
-		return DEFAULT_MIN_SIZE;
-	}
-
-	private getNodeKey(node: React.ReactChild, index: number): string {
-		if (typeof node === 'object' && node != null && node.key != null) {
-			return 'key.' + node.key;
-		}
-
-		return 'index.' + index;
-	}
-
-	private getChildPanes(): [string, React.ReactChild][] {
-		return this.props.children.map(
-			(node, index): [string, React.ReactChild] => [this.getNodeKey(node, index), node],
-		);
-	}
-
-	private getSizeAttr(): 'width' | 'height' {
-		switch (this.props.split) {
-			case 'horizontal':
-				return 'height';
-
-			case 'vertical':
-				return 'width';
-		}
-	}
-
-	private getSizeUpdate(): Map<string, number> {
-		const sizeAttr = this.getSizeAttr();
-		const childPanes = this.getChildPanes();
-
-		return new Map(
-			childPanes.map(
-				([key]): [string, number] => {
-					const ref = this.paneRefs.get(key);
-
-					const size =
-						ref && ref.current ? ref.current.getBoundingClientRect()[sizeAttr] : 0;
-					return [key, size];
-				},
-			),
-		);
-	}
-
-	private collectSizes(sizes: Map<React.Key, number>): number[] {
-		const childPanes = this.getChildPanes();
-		return childPanes.map(([key]) => sizes.get(key) || 0);
-	}
-
-	private handleDragStart = (index: number, pos: ClientPosition) => {
-		const { onDragStarted, split } = this.props;
-		const origin = split === 'vertical' ? pos.clientX : pos.clientY;
-		const sizes = this.getSizeUpdate();
-
-		if (onDragStarted) {
-			onDragStarted();
-		}
-
-		this.setState({
-			resize: {
-				origin,
-				index,
-				sizes: this.collectSizes(sizes),
-			},
-			sizes,
-		});
-	};
-
-	private move(sizes: number[], index: number, offset: number): number {
-		const childPanes = this.getChildPanes();
-
-		const first = childPanes[index];
-		const second = childPanes[index + 1];
-		if (!offset || !first || !second) {
-			return 0;
-		}
-
-		const firstMinSize = this.getMinSize(index);
-		const secondMinSize = this.getMinSize(index + 1);
-
-		const firstSize = sizes[index] + offset;
-		const secondSize = sizes[index + 1] - offset;
-
-		if (offset < 0 && firstSize < firstMinSize) {
-			// offset is negative, so missing and pushed are, too
-			const missing = firstSize - firstMinSize;
-			const pushed = this.move(sizes, index - 1, missing);
-
-			offset -= missing - pushed;
-		} else if (offset > 0 && secondSize < secondMinSize) {
-			const missing = secondMinSize - secondSize;
-			const pushed = this.move(sizes, index + 1, missing);
-
-			offset -= missing - pushed;
-		}
-
-		sizes[index] += offset;
-		sizes[index + 1] -= offset;
-
-		return offset;
-	}
-
-	private onTouchMove = (event: TouchEvent) => {
-		this.onMouseMove(event.touches[0]);
-	};
-
-	private onMouseMove = (event: ClientPosition) => {
-		const { resize, sizes } = this.state;
-		if (!resize) {
-			return;
-		}
-
-		const { split, onChange } = this.props;
-		const { origin, index } = resize;
-
-		const current = split === 'vertical' ? event.clientX : event.clientY;
-
-		const newSizes = this.collectSizes(sizes);
-
-		if (this.move(newSizes, index, current - origin) !== 0) {
-			if (onChange) {
-				onChange(newSizes);
-			}
-		}
-
-		this.setState({
-			resize: {
-				...resize,
-				sizes: newSizes,
-			},
-		});
-	};
-
-	private onMouseUp = () => {
-		const { resize } = this.state;
-		if (!resize) {
-			return;
-		}
-
-		const { sizes } = resize;
-		const { onDragFinished } = this.props;
-		if (onDragFinished) {
-			onDragFinished(sizes);
-		}
-
-		const sizeMap = new Map(
-			this.getChildPanes().map(([key], index): [string, number] => [key, sizes[index]]),
-		);
-
-		this.setState({ resize: null, sizes: sizeMap });
-	};
-}
+	return (
+		<div className={classes} style={style}>
+			<div className={dragLayerClasses} style={dragLayerStyle} />
+			{entries}
+		</div>
+	);
+});
+SplitPane.displayName = 'SplitPane';

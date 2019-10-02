@@ -46,3 +46,4 @@ export const Pane = React.memo(({ size, minSize, split, className, forwardRef, c
 		</div>
 	);
 });
+Pane.displayName = 'Pane';

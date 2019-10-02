@@ -17,7 +17,6 @@ module.exports = {
 		},
 	},
 	rules: {
-		'react/display-name': 'off',
 		'react-hooks/rules-of-hooks': 'error',
 		'react-hooks/exhaustive-deps': 'warn',
 		'prettier/prettier': 'warn',	
