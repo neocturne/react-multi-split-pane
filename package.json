@@ -35,10 +35,12 @@
 		"release": "yarn version --message \"$npm_package_name v%s\""
 	},
 	"dependencies": {
-		"react": "^16.10.1"
+		"react": "^16.10.1",
+		"react-dom": "^16.10.1"
 	},
 	"devDependencies": {
 		"@types/react": "^16.9.4",
+		"@types/react-dom": "^16.9.1",
 		"@typescript-eslint/eslint-plugin": "^2.3.2",
 		"@typescript-eslint/parser": "^2.3.2",
 		"eslint": "^6.5.1",

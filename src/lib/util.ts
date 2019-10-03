@@ -1,5 +1,6 @@
 import * as React from 'react';
-const { useCallback, useMemo, useState } = React;
+import * as ReactDOM from 'react-dom';
+const { useCallback, useMemo, useState, useEffect } = React;
 
 export interface ClientPosition {
 	clientX: number;
@@ -10,7 +11,7 @@ export function useEventListener<K extends keyof DocumentEventMap>(
 	type: K,
 	listener?: (this: Document, ev: DocumentEventMap[K]) => void,
 ): void {
-	React.useEffect(() => {
+	useEffect(() => {
 		if (!listener) return;
 
 		document.addEventListener(type, listener);
@@ -59,8 +60,10 @@ function useDragStateHandlers<T>(
 		const dragState: DragState<T> = { offset: current - origin, extraState };
 
 		const onMouseUp = (): void => {
-			setDragging(null);
-			onDragFinished(dragState);
+			ReactDOM.unstable_batchedUpdates(() => {
+				setDragging(null);
+				onDragFinished(dragState);
+			});
 		};
 
 		return [dragState, onMouseUp];
