@@ -99,9 +99,7 @@ const defaultProps = {
 	className: '',
 };
 
-function useSplitPaneResize(
-	options: SplitPaneResizeOptions,
-): {
+function useSplitPaneResize(options: SplitPaneResizeOptions): {
 	childPanes: {
 		key: string;
 		node: React.ReactNode;
