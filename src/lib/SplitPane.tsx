@@ -161,7 +161,11 @@ function useSplitPaneResize(options: SplitPaneResizeOptions): {
 
 	useEffect(() => {
 		if (onChange && dragState) {
-			onChange(movedSizes);
+			if (window.requestAnimationFrame) {
+				window.requestAnimationFrame(() => onChange(movedSizes))
+			} else {
+				setTimeout(() => onChange(movedSizes), 66)
+			}
 		}
 	}, [dragState, movedSizes, onChange]);
 
