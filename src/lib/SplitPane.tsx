@@ -239,7 +239,7 @@ export const SplitPane = React.memo((props: SplitPaneProps) => {
 		display: 'flex',
 		flex: 1,
 		height: '100%',
-		position: 'absolute',
+		position: 'relative',
 		outline: 'none',
 		overflow: 'hidden',
 		...splitStyleProps,
@@ -247,7 +247,7 @@ export const SplitPane = React.memo((props: SplitPaneProps) => {
 	const classes = ['SplitPane', split, className].join(' ');
 
 	const dragLayerStyle: React.CSSProperties = {
-		position: 'absolute',
+		position: 'relative',
 		top: 0,
 		right: 0,
 		bottom: 0,
