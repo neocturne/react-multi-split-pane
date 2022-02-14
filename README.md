@@ -63,6 +63,10 @@ Additional CSS class name that is appied to all elements rendered by the
 SplitPane. For a class name `custom`, the individual elements can be selected as
 `.SplitPane.custom`, `.Resizer.custom`, and `.Pane.custom`.
 
+### resizerClassName: string
+Additional CSS class name that is appied only to the resizer rendered by the
+SplitPane.
+
 ### onDragStarted: () => void
 This callback is invoked when a drag starts.
 
