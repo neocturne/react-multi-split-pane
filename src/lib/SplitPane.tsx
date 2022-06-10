@@ -11,7 +11,7 @@ export interface SplitPaneProps {
 	split?: 'horizontal' | 'vertical';
 	className?: string;
 	resizerClassName?: string;
-	resizerStyle?: { [key: string]: string };
+	resizerStyle?: React.CSSProperties;
 
 	children: React.ReactChild[];
 

@@ -7,7 +7,7 @@ export interface ResizerProps {
 	split: 'horizontal' | 'vertical';
 	className: string;
 	index: number;
-	style?: { [key: string]: string };
+	style?: React.CSSProperties;
 
 	onDragStarted: (index: number, pos: ClientPosition) => void;
 }
