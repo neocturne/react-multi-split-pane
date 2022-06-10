@@ -11,6 +11,7 @@ export interface SplitPaneProps {
 	split?: 'horizontal' | 'vertical';
 	className?: string;
 	resizerClassName?: string;
+	resizerStyle?: React.CSSProperties;
 
 	children: React.ReactChild[];
 
@@ -217,7 +218,7 @@ function useSplitPaneResize(options: SplitPaneResizeOptions): {
 
 export const SplitPane = React.memo((props: SplitPaneProps) => {
 	const options = { ...defaultProps, ...props };
-	const { split, className, resizerClassName } = options;
+	const { split, className, resizerClassName, resizerStyle } = options;
 
 	const { childPanes, resizeState, handleDragStart } = useSplitPaneResize(options);
 
@@ -266,6 +267,7 @@ export const SplitPane = React.memo((props: SplitPaneProps) => {
 				<Resizer
 					key={'resizer.' + index}
 					split={split}
+					style={resizerStyle}
 					className={
 						className +
 						(resizing ? ' resizing' : '') +

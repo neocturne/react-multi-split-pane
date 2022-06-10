@@ -7,11 +7,12 @@ export interface ResizerProps {
 	split: 'horizontal' | 'vertical';
 	className: string;
 	index: number;
+	style?: React.CSSProperties;
 
 	onDragStarted: (index: number, pos: ClientPosition) => void;
 }
 
-export const Resizer = React.memo(({ split, className, index, onDragStarted }: ResizerProps) => {
+export const Resizer = React.memo(({ split, className, index, style = {}, onDragStarted }: ResizerProps) => {
 	const handleMouseDown = useCallback(
 		(event: React.MouseEvent) => {
 			event.preventDefault();
@@ -36,7 +37,7 @@ export const Resizer = React.memo(({ split, className, index, onDragStarted }: R
 		<span
 			role='presentation'
 			className={classes}
-			style={{ flex: 'none' }}
+			style={{ flex: 'none', ...style }}
 			onMouseDown={handleMouseDown}
 			onTouchStart={handleTouchStart}
 		/>
