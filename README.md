@@ -67,6 +67,9 @@ SplitPane. For a class name `custom`, the individual elements can be selected as
 Additional CSS class name that is appied only to the resizer rendered by the
 SplitPane.
 
+### resizerStyle: React.CSSProperties
+Additional CSS styles to be applied to the resizer rendered by the SplitPane.
+
 ### onDragStarted: () => void
 This callback is invoked when a drag starts.
 
