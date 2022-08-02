@@ -101,6 +101,7 @@ export function useDragState<T>(
 	useEventListener('mousemove', onMouseMove);
 	useEventListener('touchmove', onTouchMove);
 	useEventListener('mouseup', onMouseUp);
+	useEventListener('touchend', onMouseUp);
 
 	return [dragState, beginDrag];
 }
